@@ -9,7 +9,8 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
         ECR_REPO_URL = '640168455910.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPO_NAME = 'enis-app'
-        IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
+        IMAGE_REPO_FRONTEND = "${ECR_REPO_URL}/frontend-app"
+        IMAGE_REPO_BACKEND = "${ECR_REPO_URL}/backend-app"
         AWS_REGION = "us-east-1"
     }
     stages {
@@ -56,6 +57,18 @@ pipeline {
                 }
             }
         }
+
+        stage('Create Database in RDS') {
+            steps {
+                script {
+                    sh """
+                        mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -pDBpassword2024 -e "CREATE DATABASE IF NOT EXISTS enis_tp;"
+                        mysql -h ${RDS_ENDPOINT} -P 3306 -u dbuser -pDBpassword2024 -e "SHOW DATABASES;"
+                    """
+                }
+            }
+        }
+
         stage('Update Frontend Configuration') {
             steps {
                 script {
@@ -71,6 +84,7 @@ pipeline {
                 }
             }
         }
+
         stage('Update Backend Configuration') {
             steps {
                 script {
@@ -96,6 +110,60 @@ pipeline {
                             sed -n '/DATABASES = {/,/^}/p' settings.py
                         '''
                     }
+                }
+            }
+        }
+
+        stage('Build Frontend Docker Image') {
+            steps {
+                dir('enis-app-tp/frontend') {
+                    script {
+                        echo 'Building Frontend Docker Image...'
+                        def frontendImage = docker.build('frontend-app')
+                        echo "Built Image: ${frontendImage.id}"
+                    }
+                }
+            }
+        }
+
+        stage('Build Backend Docker Image') {
+            steps {
+                dir('enis-app-tp/backend') {
+                    script {
+                        echo 'Building Backend Docker Image...'
+                        def backendImage = docker.build('backend-app')
+                        echo "Built Image: ${backendImage.id}"
+                    }
+                }
+            }
+        }
+
+        stage('Login to AWS ECR') {
+            steps {
+                script {
+                    sh """
+                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REPO_URL}
+                    """
+                }
+            }
+        }
+
+        stage('Tag and Push Frontend Image') {
+            steps {
+                script {
+                    echo 'Tagging and pushing Frontend Image...'
+                    sh "docker tag frontend-app:latest ${IMAGE_REPO_FRONTEND}:latest"
+                    sh "docker push ${IMAGE_REPO_FRONTEND}:latest"
+                }
+            }
+        }
+
+        stage('Tag and Push Backend Image') {
+            steps {
+                script {
+                    echo 'Tagging and pushing Backend Image...'
+                    sh "docker tag backend-app:latest ${IMAGE_REPO_BACKEND}:latest"
+                    sh "docker push ${IMAGE_REPO_BACKEND}:latest"
                 }
             }
         }
