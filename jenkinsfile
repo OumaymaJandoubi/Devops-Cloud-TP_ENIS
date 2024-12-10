@@ -56,6 +56,48 @@ pipeline {
             }
         }
 
+        stage('Download SSH Key from S3') {
+            steps {
+                script {
+                    dir('ansible') {
+                        sh """
+                        # Check and delete the existing key if it exists
+                        if [ -f "deployer_key.pem" ]; then
+                            echo "Deleting existing deployer_key.pem"
+                            rm deployer_key.pem
+                        fi
+
+                        # Download the SSH key from S3
+                        aws s3 cp ${DEPLOYER_KEY_URI} deployer_key.pem
+
+                        # Set the proper permissions for the private key
+                        chmod 600 deployer_key.pem
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Update Hosts File') {
+            steps {
+                script {
+                    dir('ansible') {
+                        sh """
+                        if [ -f "hosts" ]; then
+                            echo "Found hosts file at \$(pwd)"
+                            sed -i "2s|.*|${EC2_PUBLIC_IP}|" hosts
+                            echo "Updated hosts file:"
+                            cat hosts
+                        else
+                            echo "hosts file not found in \$(pwd)!"
+                            exit 1
+                        fi
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Create Database in RDS') {
             steps {
                 script {
