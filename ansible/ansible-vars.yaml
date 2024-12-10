@@ -11,7 +11,7 @@ backend_image_tag: "backend-1.0"
 
 # Docker-related variables
 docker_network_name: "my_bridge"
-compose_local_path: "/home/oumaima/Devops-Cloud-TP_ENIS/enis-app-tp/docker-compose.yml"
+compose_local_path: "/var/lib/jenkins/workspace/Deploy Note App/enis-app-tp/docker-compose.yml"
 compose_remote_path: "/home/ubuntu/docker-compose.yaml"
 project_src_path: "/home/ubuntu"
 backend_container_name: "backend-app"
