@@ -9,8 +9,6 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
         ECR_REPO_URL = '640168455910.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPO_NAME = 'enis-app'
-        IMAGE_REPO_FRONTEND = "${ECR_REPO_URL}/frontend-1.0"
-        IMAGE_REPO_BACKEND = "${ECR_REPO_URL}/backend-1.0"
         AWS_REGION = "us-east-1"
     }
     stages {
@@ -114,25 +112,28 @@ pipeline {
             }
         }
 
-        stage('Build Frontend Docker Image') {
-            steps {
-                dir('enis-app-tp/frontend') {
-                    script {
-                        echo 'Building Frontend Docker Image...'
-                        def frontendImage = docker.build('frontend-1.0')
-                        echo "Built Image: ${frontendImage.id}"
+        stage('Build Docker Images') {
+            parallel {
+                stage('Build Frontend Docker Image') {
+                    steps {
+                        dir('enis-app-tp/frontend') {
+                            script {
+                                echo 'Building Frontend Docker Image...'
+                                def frontendImage = docker.build('frontend-1.0')
+                                echo "Built Image: ${frontendImage.id}"
+                            }
+                        }
                     }
                 }
-            }
-        }
-
-        stage('Build Backend Docker Image') {
-            steps {
-                dir('enis-app-tp/backend') {
-                    script {
-                        echo 'Building Backend Docker Image...'
-                        def backendImage = docker.build('backend-1.0')
-                        echo "Built Image: ${backendImage.id}"
+                stage('Build Backend Docker Image') {
+                    steps {
+                        dir('enis-app-tp/backend') {
+                            script {
+                                echo 'Building Backend Docker Image...'
+                                def backendImage = docker.build('backend-1.0')
+                                echo "Built Image: ${backendImage.id}"
+                            }
+                        }
                     }
                 }
             }
@@ -148,22 +149,25 @@ pipeline {
             }
         }
 
-        stage('Tag and Push Frontend Image') {
-            steps {
-                script {
-                    echo 'Tagging and pushing Frontend Image...'
-                    sh "docker tag frontend-1.0:latest ${IMAGE_REPO_FRONTEND}:latest"
-                    sh "docker push ${IMAGE_REPO_FRONTEND}:latest"
+        stage('Tag and Push Docker Images') {
+            parallel {
+                stage('Push Frontend Image') {
+                    steps {
+                        script {
+                            echo 'Tagging and pushing Frontend Image...'
+                            sh "docker tag frontend-1.0:latest ${ECR_REPO_URL}/${ECR_REPO_NAME}:frontend-1.0"
+                            sh "docker push ${ECR_REPO_URL}/${ECR_REPO_NAME}:frontend-1.0"
+                        }
+                    }
                 }
-            }
-        }
-
-        stage('Tag and Push Backend Image') {
-            steps {
-                script {
-                    echo 'Tagging and pushing Backend Image...'
-                    sh "docker tag backend-1.0:latest ${IMAGE_REPO_BACKEND}:latest"
-                    sh "docker push ${IMAGE_REPO_BACKEND}:latest"
+                stage('Push Backend Image') {
+                    steps {
+                        script {
+                            echo 'Tagging and pushing Backend Image...'
+                            sh "docker tag backend-1.0:latest ${ECR_REPO_URL}/${ECR_REPO_NAME}:backend-1.0"
+                            sh "docker push ${ECR_REPO_URL}/${ECR_REPO_NAME}:backend-1.0"
+                        }
+                    }
                 }
             }
         }
