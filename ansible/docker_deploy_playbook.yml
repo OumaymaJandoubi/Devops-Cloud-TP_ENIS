@@ -14,7 +14,6 @@
       vars:
         ansible_connection: local
         become: false
-        ansible_become_password: "{{ sudo_password }}" 
 
 - name: Install Docker and Docker-Compose
   hosts: servers
