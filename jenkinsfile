@@ -9,8 +9,8 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
         ECR_REPO_URL = '640168455910.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPO_NAME = 'enis-app'
-        IMAGE_REPO_FRONTEND = "${ECR_REPO_URL}/frontend-app"
-        IMAGE_REPO_BACKEND = "${ECR_REPO_URL}/backend-app"
+        IMAGE_REPO_FRONTEND = "${ECR_REPO_URL}/frontend-1.0"
+        IMAGE_REPO_BACKEND = "${ECR_REPO_URL}/backend-1.0"
         AWS_REGION = "us-east-1"
     }
     stages {
