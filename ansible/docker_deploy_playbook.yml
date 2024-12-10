@@ -12,7 +12,7 @@
         search_regex: OpenSSH
         host: '{{ ansible_host | default(inventory_hostname) }}'
       vars:
-        ansible_connection: local
+        ansible_connection: ssh
         become: false
 
 - name: Install Docker and Docker-Compose
@@ -67,7 +67,7 @@
     - name: Display Docker Compose version
       debug:
         msg: |
-         "Docker Compose version: {{ docker_compose_version_output.stdout }}"
+          "Docker Compose version: {{ docker_compose_version_output.stdout }}"
 
 - name: Install AWS CLI on EC2 Instances
   hosts: servers
@@ -90,8 +90,7 @@
 
     - name: Download AWS CLI installation script using curl
       command: >
-        curl -o /tmp/awscliv2.zip
-        https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        curl -o /tmp/awscliv2.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
       when: aws_cli_check.failed
 
     - name: Unzip AWS CLI installation package
@@ -120,11 +119,10 @@
     - ansible-vars.yaml
   tasks:
     - name: Log in to Amazon ECR
-      docker_login:
-        registry_url: "{{ ecr_url }}"
-        username: AWS
-        password: "{{ lookup('pipe', 'aws ecr get-login-password --region ' + region) }}"
-        reauthorize: true
+      shell: |
+        aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ ecr_url }}
+      args:
+        executable: /bin/bash
 
     - name: Pull frontend Docker image from ECR
       docker_image:
@@ -170,11 +168,9 @@
 
     - name: Run makemigrations inside backend container
       command: /usr/bin/docker exec backend-app python manage.py makemigrations
-      become: true
-      
+
     - name: Run migrate inside backend container
       command: docker exec {{ backend_container_name }} python manage.py migrate
-      become: true
 
     - name: Create superuser inside backend container
       command: >
@@ -183,4 +179,3 @@
           User = get_user_model();
           User.objects.filter(username='{{ superuser_username }}').exists() or
           User.objects.create_superuser('{{ superuser_username }}', '{{ superuser_email }}', '{{ superuser_password }}')"
-
