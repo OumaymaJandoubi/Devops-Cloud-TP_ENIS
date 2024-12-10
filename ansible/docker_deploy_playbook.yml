@@ -163,9 +163,10 @@
         dest: "{{ compose_remote_path }}"
 
     - name: Start Docker containers from Docker Compose
-      docker_compose:
-        project_src: "{{ project_src_path }}"
-        state: present
+      shell: |
+        docker-compose up -d
+      args:
+        chdir: "{{ project_src_path }}"
 
     - name: Run makemigrations inside backend container
       command: /usr/bin/docker exec backend-app python manage.py makemigrations
