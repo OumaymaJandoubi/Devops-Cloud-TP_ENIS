@@ -119,7 +119,7 @@ pipeline {
                 dir('enis-app-tp/frontend') {
                     script {
                         echo 'Building Frontend Docker Image...'
-                        def frontendImage = docker.build('frontend-app')
+                        def frontendImage = docker.build('frontend-1.0')
                         echo "Built Image: ${frontendImage.id}"
                     }
                 }
@@ -131,7 +131,7 @@ pipeline {
                 dir('enis-app-tp/backend') {
                     script {
                         echo 'Building Backend Docker Image...'
-                        def backendImage = docker.build('backend-app')
+                        def backendImage = docker.build('backend-1.0')
                         echo "Built Image: ${backendImage.id}"
                     }
                 }
@@ -152,7 +152,7 @@ pipeline {
             steps {
                 script {
                     echo 'Tagging and pushing Frontend Image...'
-                    sh "docker tag frontend-app:latest ${IMAGE_REPO_FRONTEND}:latest"
+                    sh "docker tag frontend-1.0:latest ${IMAGE_REPO_FRONTEND}:latest"
                     sh "docker push ${IMAGE_REPO_FRONTEND}:latest"
                 }
             }
@@ -162,7 +162,7 @@ pipeline {
             steps {
                 script {
                     echo 'Tagging and pushing Backend Image...'
-                    sh "docker tag backend-app:latest ${IMAGE_REPO_BACKEND}:latest"
+                    sh "docker tag backend-1.0:latest ${IMAGE_REPO_BACKEND}:latest"
                     sh "docker push ${IMAGE_REPO_BACKEND}:latest"
                 }
             }
