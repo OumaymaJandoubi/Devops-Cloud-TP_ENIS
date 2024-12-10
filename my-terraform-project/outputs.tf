@@ -13,7 +13,7 @@ output "instance_details" {
 
 output "deployer_key_s3_uri" {
   description = "S3 URI of the deployer key file"
-  value       = "s3://${aws_s3_object.private_key_object.bucket}/${aws_s3_object.private_key_object.key}"
+  value       = "s3://${aws_s3_bucket_object.private_key_object.bucket}/${aws_s3_bucket_object.private_key_object.key}"
 }
 
 output "rds_endpoint" {
