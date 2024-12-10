@@ -7,7 +7,7 @@ pipeline {
     environment {
         AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
         AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
-        ECR_REPO_URL = '682033493357.dkr.ecr.us-east-1.amazonaws.com'
+        ECR_REPO_URL = '640168455910.dkr.ecr.us-east-1.amazonaws.com'
         ECR_REPO_NAME = 'enis-app'
         IMAGE_REPO = "${ECR_REPO_URL}/${ECR_REPO_NAME}"
         AWS_REGION = "us-east-1"
@@ -17,12 +17,12 @@ pipeline {
             steps {
                 script {
                     // Initialize and apply Terraform in remote_backend directory
-                    dir('my-terraform-project/remote_backend') {
+                    dir('my-terraform-project/remote-backend') {
                         sh "terraform init"
                         sh "terraform apply --auto-approve"
                     }
 
-                    // Initialize and apply Terraform in main project directory
+                    // Initialize and apply Terraform in main project
                     dir('my-terraform-project') {
                         sh "terraform init"
                         sh "terraform plan -lock=false"
