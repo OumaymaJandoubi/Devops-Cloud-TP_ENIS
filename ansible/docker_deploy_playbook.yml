@@ -163,8 +163,8 @@
         src: "{{ compose_local_path }}"
         dest: "{{ compose_remote_path }}"
 
-    - name: Start Docker containers from Docker Compose
-      docker_compose:
+    - name: Start Docker containers from Docker Compose (v2)
+      community.docker.docker_compose_v2:
         project_src: "{{ project_src_path }}"
         state: present
 
