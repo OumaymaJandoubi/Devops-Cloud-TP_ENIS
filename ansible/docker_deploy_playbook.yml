@@ -1,4 +1,5 @@
 ---
+# Basic Web Server Setup
 - name: Basic Web Server Setup
   hosts: servers
   gather_facts: false
@@ -15,6 +16,7 @@
         ansible_connection: local
         become: false
 
+# Install Docker and Docker-Compose
 - name: Install Docker and Docker-Compose
   hosts: servers
   become: true
@@ -66,9 +68,9 @@
 
     - name: Display Docker Compose version
       debug:
-        msg: |
-         "Docker Compose version: {{ docker_compose_version_output.stdout }}"
+        msg: "Docker Compose version: {{ docker_compose_version_output.stdout }}"
 
+# Install AWS CLI on EC2 Instances
 - name: Install AWS CLI on EC2 Instances
   hosts: servers
   become: true
@@ -89,9 +91,7 @@
       ignore_errors: true
 
     - name: Download AWS CLI installation script using curl
-      command: >
-        curl -o /tmp/awscliv2.zip
-        https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+      command: "curl -o /tmp/awscliv2.zip https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
       when: aws_cli_check.failed
 
     - name: Unzip AWS CLI installation package
@@ -102,8 +102,7 @@
       when: aws_cli_check.failed
 
     - name: Run AWS CLI installer
-      command: >
-        /tmp/aws/install -i /usr/local/aws-cli -b /usr/local/bin --update
+      command: "/tmp/aws/install -i /usr/local/aws-cli -b /usr/local/bin --update"
       when: aws_cli_check.failed
 
     - name: Verify AWS CLI installation
@@ -113,6 +112,7 @@
     - debug:
         msg: "AWS CLI version: {{ aws_cli_version.stdout }}"
 
+# Pull Docker images from ECR to EC2 instance
 - name: Pull Docker images from ECR to EC2 instance
   hosts: servers
   become: true
@@ -120,11 +120,11 @@
     - ansible-vars.yaml
   tasks:
     - name: Log in to Amazon ECR
-      shell: |
-        aws ecr get-login-password --region {{ region }} | docker login --username AWS --password-stdin {{ ecr_url }}
-      args:
-        executable: /bin/bash
-
+      docker_login:
+        registry_url: "{{ ecr_url }}"
+        username: AWS
+        password: "{{ lookup('pipe', 'aws ecr get-login-password --region ' + region) }}"
+        reauthorize: true
 
     - name: Pull frontend Docker image from ECR
       docker_image:
@@ -146,6 +146,7 @@
       debug:
         msg: "{{ docker_images_output.stdout }}"
 
+# Deploy Docker containers and run migrations
 - name: Deploy Docker containers and run migrations
   hosts: servers
   become: true
@@ -163,25 +164,25 @@
         dest: "{{ compose_remote_path }}"
 
     - name: Start Docker containers from Docker Compose
-      shell: |
-        docker-compose up -d
-      args:
-        chdir: "{{ project_src_path }}"
-
+      docker_compose:
+        project_src: "{{ project_src_path }}"
+        state: present
 
     - name: Run makemigrations inside backend container
-      command: /usr/bin/docker exec backend-app python manage.py makemigrations
+      command: "/usr/bin/docker exec backend-app python manage.py makemigrations"
       become: true
-      
+
     - name: Run migrate inside backend container
-      command: docker exec {{ backend_container_name }} python manage.py migrate
+      command: "docker exec {{ backend_container_name }} python manage.py migrate"
       become: true
 
+        # Create superuser inside backend container
     - name: Create superuser inside backend container
-      command: >
-        docker exec {{ backend_container_name }} python manage.py shell -c "
-          from django.contrib.auth import get_user_model;
-          User = get_user_model();
-          User.objects.filter(username='{{ superuser_username }}').exists() or
-          User.objects.create_superuser('{{ superuser_username }}', '{{ superuser_email }}', '{{ superuser_password }}')"
-
+      copy:
+        content: |
+          from django.contrib.auth import get_user_model
+          User = get_user_model()
+          if not User.objects.filter(username='{{ superuser_username }}').exists():
+              User.objects.create_superuser('{{ superuser_username }}', '{{ superuser_email }}', '{{ superuser_password }}')
+        dest: /tmp/create_superuser.py
+      become: true
