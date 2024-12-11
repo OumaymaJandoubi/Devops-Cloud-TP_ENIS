@@ -4,6 +4,8 @@
   hosts: servers
   gather_facts: false
   become: true
+  vars:
+    ansible_become_password: "oumaima123"
   tasks:
     - name: Ensure SSH connection is available
       ansible.builtin.wait_for:
@@ -12,9 +14,7 @@
         timeout: 100
         search_regex: OpenSSH
         host: '{{ ansible_host | default(inventory_hostname) }}'
-      vars:
-        ansible_connection: local
-        become: false
+
 
 # Install Docker and Docker-Compose
 - name: Install Docker and Docker-Compose
