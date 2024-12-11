@@ -163,10 +163,11 @@
         src: "{{ compose_local_path }}"
         dest: "{{ compose_remote_path }}"
 
-    - name: Start Docker containers from Docker Compose (v2)
-      community.docker.docker_compose_v2:
-        project_src: "{{ project_src_path }}"
-        state: present
+    - name: Start Docker containers from Docker Compose
+      shell: |
+        docker-compose up -d
+      args:
+        chdir: "{{ project_src_path }}"
 
     - name: Run makemigrations inside backend container
       command: "/usr/bin/docker exec backend-app python manage.py makemigrations"
